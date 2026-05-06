@@ -931,41 +931,39 @@ footer a{color:var(--teal-lt)}
   <p class="section-sub" style="color:rgba(226,215,218,0.6)">Eleven notebooks, one per stage. All result files committed. Adapter weights excluded (regenerate with NB_05).</p>
 
   <div class="repo-tree">
-<span class="dir">NLP_Arabic_HTR_Project/</span>
-│
-├── <span class="dir">notebooks/</span>                        <span class="comment"># one notebook per stage</span>
-│   ├── <span class="nb">NB_01_setup.ipynb</span>               <span class="file">environment + Drive setup</span>
-│   ├── <span class="nb">NB_02_data_preprocessing.ipynb</span>  <span class="file">image validation + inspection</span>
-│   ├── <span class="nb">NB_03_data_collection.ipynb</span>     <span class="file">GPT teacher labeling (OpenAI API)</span>
-│   ├── <span class="nb">NB_04_data_transformation.ipynb</span> <span class="file">GPT → Qwen format · 80/20 split</span>
-│   ├── <span class="nb">NB_05_finetuning.ipynb</span>          <span class="comment"># A100 required · ~90 min</span>
-│   ├── <span class="nb">NB_06_evaluation.ipynb</span>          <span class="file">CER / WER / JSON rate · A100</span>
-│   ├── <span class="nb">NB_07_downstream_nlp.ipynb</span>      <span class="file">NER + POS · CAMeL Tools</span>
-│   ├── <span class="nb">NB_08_ocr_baseline.ipynb</span>        <span class="file">EasyOCR Arabic baseline</span>
-│   ├── <span class="nb">NB_09_zero-Shot_qwen_baseline.ipynb</span> <span class="comment"># A100 · primary baseline</span>
-│   ├── <span class="nb">NB_10_normalization.ipynb</span>       <span class="file">5-step Arabic normalization impact</span>
-│   └── <span class="nb">NB_11_perplexity.ipynb</span>          <span class="file">bigram / trigram LM perplexity</span>
-│
-├── <span class="dir">data/</span>
-│   ├── eval/eval.jsonl                 <span class="file">280 eval samples (images as base64)</span>
-│   └── train/train.jsonl              <span class="file">1,120 train samples</span>
-│
-├── <span class="dir">logs/</span>
-│   ├── run-1/
-│   │   ├── eval_results_checkpoint-1120.json  <span class="comment"># CER 0.3283 · primary results</span>
-│   │   ├── eval_results_zero_shot.json
-│   │   ├── training_log.json
-│   │   └── training_curve.png
-│   ├── stage6/  ner_results.json · pos_results.json
-│   ├── stage7/  easyocr_results.json
-│   ├── stage10/ normalization_results.json
-│   └── stage11/ perplexity_results.json
-│
-├── <span class="dir">camel_data/</span>                         <span class="file">CAMeL Tools NER + morphology models</span>
-│
-└── .gitignore                          <span class="comment"># models/ and large bins excluded</span>
-  </div>
-</section>
+<div><span class="dir">NLP_Arabic_HTR_Project/</span></div>
+<div>│</div>
+<div>├── <span class="dir">notebooks/</span>  <span class="comment"># one notebook per stage</span></div>
+<div>│   ├── <span class="nb">NB_01_setup.ipynb</span>               <span class="file">environment + Drive setup</span></div>
+<div>│   ├── <span class="nb">NB_02_data_preprocessing.ipynb</span>  <span class="file">image validation + inspection</span></div>
+<div>│   ├── <span class="nb">NB_03_data_collection.ipynb</span>     <span class="file">GPT teacher labeling (OpenAI API)</span></div>
+<div>│   ├── <span class="nb">NB_04_data_transformation.ipynb</span> <span class="file">GPT → Qwen format · 80/20 split</span></div>
+<div>│   ├── <span class="nb">NB_05_finetuning.ipynb</span>          <span class="comment"># A100 required · ~90 min</span></div>
+<div>│   ├── <span class="nb">NB_06_evaluation.ipynb</span>          <span class="file">CER / WER / JSON rate · A100</span></div>
+<div>│   ├── <span class="nb">NB_07_downstream_nlp.ipynb</span>      <span class="file">NER + POS · CAMeL Tools</span></div>
+<div>│   ├── <span class="nb">NB_08_ocr_baseline.ipynb</span>        <span class="file">EasyOCR Arabic baseline</span></div>
+<div>│   ├── <span class="nb">NB_09_zero-Shot_qwen_baseline.ipynb</span> <span class="comment"># A100 · primary baseline</span></div>
+<div>│   ├── <span class="nb">NB_10_normalization.ipynb</span>       <span class="file">5-step Arabic normalization impact</span></div>
+<div>│   └── <span class="nb">NB_11_perplexity.ipynb</span>          <span class="file">bigram / trigram LM perplexity</span></div>
+<div>│</div>
+<div>├── <span class="dir">data/</span></div>
+<div>│   ├── eval/eval.jsonl   <span class="file">280 eval samples (images as base64)</span></div>
+<div>│   └── train/train.jsonl <span class="file">1,120 train samples</span></div>
+<div>│</div>
+<div>├── <span class="dir">logs/</span></div>
+<div>│   ├── <span class="dir">run-1/</span></div>
+<div>│   │   ├── eval_results_checkpoint-1120.json  <span class="comment"># CER 0.3283 · primary results</span></div>
+<div>│   │   ├── eval_results_zero_shot.json</div>
+<div>│   │   ├── training_log.json</div>
+<div>│   │   └── training_curve.png</div>
+<div>│   ├── stage6/  <span class="file">ner_results.json · pos_results.json</span></div>
+<div>│   ├── stage7/  <span class="file">easyocr_results.json</span></div>
+<div>│   ├── stage10/ <span class="file">normalization_results.json</span></div>
+<div>│   └── stage11/ <span class="file">perplexity_results.json</span></div>
+<div>│</div>
+<div>├── <span class="dir">camel_data/</span>  <span class="file">CAMeL Tools NER + morphology models</span></div>
+<div>│</div>
+<div>└── .gitignore  <span class="comment"># models/ and large bins excluded</span></div>
 </div>
 
 <!-- ══ FOOTER ════════════════════════════════════════════════════════════ -->
