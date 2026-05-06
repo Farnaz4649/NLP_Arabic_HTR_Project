@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arabic HTR — Knowledge Distillation Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #e2d7da;
+  --bg2:      #d4c8cb;
+  --ink:      #22273e;
+  --ink-soft: #4a5070;
+  --ink-mute: #7a819e;
+  --teal:     #5c9eab;
+  --teal-lt:  #9ad2d1;
+  --salmon:   #e09079;
+  --white:    #f9f5f6;
+  --card:     #ede3e6;
+  --border:   rgba(34,39,62,0.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:16px;
+  line-height:1.7;
+  overflow-x:hidden;
+}
+a{color:var(--teal);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:4rem 2rem;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 80% 30%, rgba(154,210,209,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(92,158,171,0.12) 0%, transparent 55%);
+  pointer-events:none;
+}
+.hero-inner{max-width:900px;margin:0 auto;position:relative}
+.hero-tag{
+  font-family:'DM Mono',monospace;
+  font-size:12px;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--teal);
+  margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:8px;
+}
+.hero-tag::before{
+  content:'';width:24px;height:1px;background:var(--teal);
+}
+.hero h1{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(2.4rem,5vw,4rem);
+  line-height:1.15;
+  color:var(--ink);
+  margin-bottom:1rem;
+}
+.hero h1 em{
+  font-style:italic;
+  color:var(--salmon);
+}
+.hero-sub{
+  font-size:1.15rem;
+  color:var(--ink-soft);
+  max-width:600px;
+  margin-bottom:3rem;
+  font-weight:300;
+}
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:2rem;
+}
+.hero-meta-item{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.hero-meta-label{
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+}
+.hero-meta-value{
+  font-size:14px;
+  font-weight:500;
+  color:var(--ink);
+}
+.hero-scroll{
+  position:absolute;
+  bottom:2rem;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  color:var(--ink-mute);
+  font-size:11px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  font-family:'DM Mono',monospace;
+  animation:bounce 2s ease-in-out infinite;
+}
+.hero-scroll svg{width:16px;height:16px;stroke:var(--teal);fill:none;stroke-width:2}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+/* ── STAT STRIP ── */
+.stat-strip{
+  background:var(--ink);
+  padding:3rem 2rem;
+  overflow:hidden;
+}
+.stat-strip-inner{
+  max-width:900px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:2rem;
+}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat-number{
+  font-family:'DM Serif Display',serif;
+  font-size:2.6rem;
+  color:var(--teal-lt);
+  line-height:1;
+}
+.stat-unit{font-size:1rem;color:var(--teal)}
+.stat-label{
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:rgba(154,210,209,0.5);
+  margin-top:4px;
+}
+.stat-delta{
+  font-size:12px;
+  color:var(--salmon);
+  font-weight:500;
+}
+
+/* ── SECTION ── */
+.section{
+  max-width:900px;
+  margin:0 auto;
+  padding:5rem 2rem;
+}
+.section-label{
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--teal);
+  margin-bottom:1rem;
+  display:flex;align-items:center;gap:8px;
+}
+.section-label::before{content:'//\00a0'}
+.section h2{
+  font-family:'DM Serif Display',serif;
+  font-size:2rem;
+  color:var(--ink);
+  margin-bottom:0.5rem;
+}
+.section-sub{
+  color:var(--ink-soft);
+  font-weight:300;
+  margin-bottom:3rem;
+  max-width:600px;
+}
+
+/* ── PIPELINE DIAGRAM ── */
+.pipeline{
+  background:var(--white);
+  border-radius:16px;
+  padding:2.5rem 2rem;
+  border:1px solid var(--border);
+  overflow:auto;
+  margin-bottom:2rem;
+}
+.pipeline svg{width:100%;min-width:600px;display:block}
+
+/* ── REPO STRUCTURE ── */
+.repo-tree{
+  background:var(--ink);
+  border-radius:12px;
+  padding:2rem;
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+  line-height:1.8;
+  color:var(--teal-lt);
+  overflow:auto;
+}
+.repo-tree .dir{color:var(--teal)}
+.repo-tree .file{color:rgba(226,215,218,0.7)}
+.repo-tree .comment{color:var(--salmon)}
+.repo-tree .nb{color:#9ad2d1}
+
+/* ── RESULTS TABLE ── */
+.results-table{width:100%;border-collapse:collapse;margin-bottom:2rem}
+.results-table th{
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  text-align:left;
+  padding:0.75rem 1rem;
+  border-bottom:2px solid var(--border);
+}
+.results-table td{
+  padding:1rem;
+  border-bottom:1px solid var(--border);
+  font-size:14px;
+}
+.results-table tr.best td{
+  background:rgba(92,158,171,0.08);
+  font-weight:500;
+}
+.results-table tr.best td:first-child{
+  border-left:3px solid var(--salmon);
+}
+.metric-good{color:var(--teal)}
+.metric-bad{color:var(--ink-mute)}
+.badge-best{
+  background:var(--salmon);
+  color:var(--white);
+  font-size:10px;
+  padding:2px 8px;
+  border-radius:20px;
+  font-family:'DM Mono',monospace;
+  letter-spacing:0.08em;
+  margin-left:8px;
+}
+
+/* ── TRAINING CHART ── */
+.chart-wrap{
+  background:var(--white);
+  border-radius:12px;
+  padding:2rem;
+  border:1px solid var(--border);
+  margin-bottom:2rem;
+}
+.chart-title{
+  font-size:13px;
+  font-weight:500;
+  color:var(--ink-soft);
+  margin-bottom:1.5rem;
+  font-family:'DM Mono',monospace;
+}
+.chart-canvas-wrap{position:relative;height:240px}
+
+/* ── NORM BARS ── */
+.norm-bars{display:flex;flex-direction:column;gap:1.2rem;margin-bottom:2rem}
+.norm-row{}
+.norm-label{
+  font-size:13px;
+  color:var(--ink-soft);
+  margin-bottom:6px;
+  display:flex;justify-content:space-between;
+}
+.norm-label span{font-family:'DM Mono',monospace;font-size:12px}
+.bar-track{
+  background:var(--card);
+  border-radius:4px;
+  height:8px;
+  position:relative;
+  overflow:visible;
+}
+.bar-raw{
+  height:8px;
+  border-radius:4px;
+  background:var(--ink-mute);
+  position:absolute;
+  top:0;left:0;
+  transition:width 1s ease;
+}
+.bar-norm{
+  height:8px;
+  border-radius:4px;
+  background:var(--teal);
+  position:absolute;
+  top:0;left:0;
+  transition:width 1s ease;
+}
+.bar-delta-label{
+  position:absolute;
+  right:-60px;
+  top:-3px;
+  font-size:12px;
+  font-family:'DM Mono',monospace;
+  color:var(--salmon);
+  white-space:nowrap;
+}
+
+/* ── NER ── */
+.ner-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1rem;
+  margin-bottom:2rem;
+}
+.ner-card{
+  background:var(--white);
+  border-radius:12px;
+  padding:1.5rem;
+  border:1px solid var(--border);
+}
+.ner-card h3{
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  margin-bottom:1rem;
+}
+.ner-type-bar{display:flex;flex-direction:column;gap:8px}
+.ner-row{display:flex;align-items:center;gap:8px}
+.ner-type{font-size:12px;font-family:'DM Mono',monospace;width:42px;color:var(--ink-soft)}
+.ner-bar-outer{flex:1;background:var(--bg2);border-radius:3px;height:6px}
+.ner-bar-inner{height:6px;border-radius:3px;background:var(--teal)}
+.ner-count{font-size:12px;font-family:'DM Mono',monospace;color:var(--ink);width:24px;text-align:right}
+
+/* ── SAMPLES ── */
+.samples{display:flex;flex-direction:column;gap:1rem;margin-bottom:2rem}
+.sample-card{
+  background:var(--white);
+  border-radius:10px;
+  padding:1.25rem 1.5rem;
+  border:1px solid var(--border);
+  border-left:3px solid var(--border);
+}
+.sample-card.good{border-left-color:var(--teal)}
+.sample-card.bad{border-left-color:var(--salmon)}
+.sample-meta{
+  display:flex;
+  gap:1rem;
+  margin-bottom:0.75rem;
+}
+.sample-cer{
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  color:var(--ink-mute);
+}
+.sample-type{
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  color:var(--teal);
+}
+.sample-line{
+  font-size:13px;
+  margin-bottom:4px;
+  display:flex;gap:8px;
+}
+.sample-lbl{
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  color:var(--ink-mute);
+  width:32px;
+  flex-shrink:0;
+  margin-top:1px;
+}
+.arabic{
+  direction:rtl;
+  text-align:right;
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* ── PERPLEXITY ── */
+.perp-row{
+  display:flex;
+  align-items:center;
+  gap:1rem;
+  padding:0.75rem 0;
+  border-bottom:1px solid var(--border);
+}
+.perp-model{font-size:13px;flex:1}
+.perp-val{
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+  color:var(--ink-soft);
+  width:80px;
+  text-align:right;
+}
+.perp-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+
+/* ── CONFIG TABLE ── */
+.config-table{width:100%;border-collapse:collapse}
+.config-table tr{border-bottom:1px solid var(--border)}
+.config-table td{padding:0.6rem 1rem;font-size:13px}
+.config-table td:first-child{
+  font-family:'DM Mono',monospace;
+  font-size:12px;
+  color:var(--ink-mute);
+  width:200px;
+}
+.config-table td:last-child{color:var(--ink);font-weight:500}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--ink);
+  color:rgba(226,215,218,0.5);
+  text-align:center;
+  padding:2rem;
+  font-size:13px;
+  font-family:'DM Mono',monospace;
+  letter-spacing:0.05em;
+}
+footer a{color:var(--teal-lt)}
+
+/* ── UTILS ── */
+.divider{height:1px;background:var(--border);margin:3rem 0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:600px){
+  .two-col,.ner-grid{grid-template-columns:1fr}
+  .stat-strip-inner{grid-template-columns:repeat(2,1fr)}
+  .hero h1{font-size:2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">MAI 656 · NLP · Canadian University Dubai · Spring 2026</div>
+    <h1>Teaching Qwen to read<br><em>Arabic handwriting</em><br>without the GPT bill</h1>
+    <p class="hero-sub">Knowledge distillation from GPT‑4.1‑mini into a locally deployable Qwen2.5‑VL‑7B + LoRA adapter — fine‑tuned on 1,120 labeled images in 90 minutes on a single A100.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Student</span>
+        <span class="hero-meta-value">Farnaz Azarparand</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Supervisor</span>
+        <span class="hero-meta-value">Dr. Arash Kermani</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Dataset</span>
+        <span class="hero-meta-value">AHTD · 1,400 images</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Source</span>
+        <span class="hero-meta-value"><a href="https://github.com/Farnaz4649/NLP_Arabic_HTR_Project" target="_blank">github.com/Farnaz4649</a></span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    scroll
+    <svg viewBox="0 0 16 16"><polyline points="4,6 8,10 12,6"/></svg>
+  </div>
+</section>
+
+<!-- ══ STAT STRIP ═══════════════════════════════════════════════════════ -->
+<div class="stat-strip">
+  <div class="stat-strip-inner">
+    <div class="stat">
+      <div class="stat-number">0.33<span class="stat-unit"></span></div>
+      <div class="stat-label">CER · fine-tuned</div>
+      <div class="stat-delta">↓ 29% vs zero-shot</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">1,120<span class="stat-unit"></span></div>
+      <div class="stat-label">training samples</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">1.13<span class="stat-unit">%</span></div>
+      <div class="stat-label">params trained (LoRA)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">90<span class="stat-unit">min</span></div>
+      <div class="stat-label">wall-clock · A100</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">92<span class="stat-unit">%</span></div>
+      <div class="stat-label">valid JSON output rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PIPELINE ═══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-label">pipeline</div>
+  <h2>Seven stages, four phases</h2>
+  <p class="section-sub">From raw AHTD images to a locally deployable Arabic HTR model — with normalization, perplexity, and NER analysis downstream.</p>
+
+  <div class="pipeline">
+    <svg viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg" aria-label="Pipeline diagram showing seven stages from data collection to perplexity analysis">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#5c9eab"/>
+        </marker>
+      </defs>
+      <!-- Phase labels -->
+      <rect x="10" y="10" width="195" height="18" rx="4" fill="#22273e" opacity="0.08"/>
+      <text x="107" y="23" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab" letter-spacing="1">PHASE 01 · DATA</text>
+      <rect x="215" y="10" width="195" height="18" rx="4" fill="#22273e" opacity="0.08"/>
+      <text x="312" y="23" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab" letter-spacing="1">PHASE 02 · TRAIN</text>
+      <rect x="420" y="10" width="195" height="18" rx="4" fill="#22273e" opacity="0.08"/>
+      <text x="517" y="23" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab" letter-spacing="1">PHASE 03 · EVALUATE</text>
+      <rect x="625" y="10" width="185" height="18" rx="4" fill="#22273e" opacity="0.08"/>
+      <text x="717" y="23" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab" letter-spacing="1">PHASE 04 · ANALYSE</text>
+
+      <!-- Row 1: main pipeline nodes -->
+      <!-- NB01 AHTD -->
+      <rect x="10" y="50" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="55" y="76" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 01–02</text>
+      <text x="55" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">AHTD</text>
+      <text x="55" y="105" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">1,400 images</text>
+
+      <!-- NB03 GPT label -->
+      <rect x="115" y="50" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="160" y="76" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 03</text>
+      <text x="160" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">GPT teacher</text>
+      <text x="160" y="105" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">gpt-4.1-mini</text>
+
+      <!-- NB04 Transform -->
+      <rect x="215" y="50" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="260" y="76" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 04</text>
+      <text x="260" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">Transform</text>
+      <text x="260" y="105" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">80/20 split</text>
+
+      <!-- NB05 LoRA -->
+      <rect x="315" y="50" width="90" height="64" rx="8" fill="#22273e" stroke="#9ad2d1" stroke-width="1.5"/>
+      <text x="360" y="76" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#9ad2d1">NB 05</text>
+      <text x="360" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#e2d7da">LoRA finetune</text>
+      <text x="360" y="105" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#9ad2d1">r=32 · 3 epochs</text>
+
+      <!-- NB06 Eval -->
+      <rect x="420" y="50" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="465" y="76" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 06</text>
+      <text x="465" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">Evaluation</text>
+      <text x="465" y="105" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">CER · WER</text>
+
+      <!-- NB09 Zero-shot -->
+      <rect x="420" y="135" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="465" y="161" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 09</text>
+      <text x="465" y="175" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">Zero-shot</text>
+      <text x="465" y="190" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">baseline</text>
+
+      <!-- NB08 EasyOCR -->
+      <rect x="420" y="220" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="465" y="246" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 08</text>
+      <text x="465" y="260" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">EasyOCR</text>
+      <text x="465" y="275" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">baseline</text>
+
+      <!-- NB07 NER/POS -->
+      <rect x="525" y="50" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="570" y="76" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 07</text>
+      <text x="570" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">NER + POS</text>
+      <text x="570" y="105" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">CAMeL Tools</text>
+
+      <!-- NB10 Norm -->
+      <rect x="630" y="50" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="675" y="76" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 10</text>
+      <text x="675" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">Normalization</text>
+      <text x="675" y="105" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">5 steps · CER↓</text>
+
+      <!-- NB11 Perplexity -->
+      <rect x="630" y="135" width="90" height="64" rx="8" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="675" y="161" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#5c9eab">NB 11</text>
+      <text x="675" y="175" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="12" font-weight="500" fill="#22273e">Perplexity</text>
+      <text x="675" y="190" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#7a819e">bigram · trigram</text>
+
+      <!-- Arrows row 1 -->
+      <line x1="100" y1="82" x2="113" y2="82" stroke="#5c9eab" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="205" y1="82" x2="213" y2="82" stroke="#5c9eab" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="305" y1="82" x2="313" y2="82" stroke="#5c9eab" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="405" y1="82" x2="418" y2="82" stroke="#5c9eab" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="510" y1="82" x2="523" y2="82" stroke="#5c9eab" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="615" y1="82" x2="628" y2="82" stroke="#5c9eab" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Arrow from NB05 down to NB09 baseline branch -->
+      <line x1="360" y1="114" x2="360" y2="167" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="360" y1="167" x2="418" y2="167" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+      <!-- Arrow from NB05 down to EasyOCR -->
+      <line x1="360" y1="114" x2="360" y2="252" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="360" y1="252" x2="418" y2="252" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+      <!-- Arrow from NB06 to NB10 -->
+      <line x1="510" y1="82" x2="520" y2="82" stroke="none"/>
+      <line x1="570" y1="114" x2="570" y2="130" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="570" y1="130" x2="675" y2="130" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="675" y1="130" x2="675" y2="113" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+      <!-- Arrow from NB10 to NB11 -->
+      <line x1="675" y1="114" x2="675" y2="133" stroke="#5c9eab" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- best checkpoint callout -->
+      <rect x="300" y="310" width="230" height="44" rx="8" fill="#22273e"/>
+      <text x="415" y="329" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#9ad2d1" letter-spacing="1">BEST CHECKPOINT</text>
+      <text x="415" y="346" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="13" font-weight="500" fill="#e2d7da">checkpoint-1120  ·  epoch 2  ·  CER 0.33</text>
+      <line x1="360" y1="114" x2="360" y2="310" stroke="#e09079" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- Legend -->
+      <rect x="10" y="310" width="12" height="12" rx="2" fill="#22273e" stroke="#9ad2d1" stroke-width="1.5"/>
+      <text x="26" y="321" font-family="DM Mono,monospace" font-size="10" fill="#7a819e">GPU required</text>
+      <rect x="10" y="330" width="12" height="12" rx="2" fill="#ede3e6" stroke="#5c9eab" stroke-width="1"/>
+      <text x="26" y="341" font-family="DM Mono,monospace" font-size="10" fill="#7a819e">CPU / T4 OK</text>
+      <line x1="10" y1="352" x2="22" y2="352" stroke="#5c9eab" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="26" y="356" font-family="DM Mono,monospace" font-size="10" fill="#7a819e">baseline branch</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ══ RESULTS ════════════════════════════════════════════════════════════ -->
+<div style="background:var(--card)">
+<section class="section">
+  <div class="section-label">results</div>
+  <h2>Baseline comparison</h2>
+  <p class="section-sub">All three models evaluated on the same 280 held-out images against GPT-4.1-mini pseudo-labels.</p>
+
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>CER</th>
+        <th>WER</th>
+        <th>Valid JSON</th>
+        <th>Avg inference</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="best">
+        <td>Qwen2.5-VL-7B + LoRA <span class="badge-best">best</span></td>
+        <td class="metric-good">0.3283</td>
+        <td class="metric-good">0.6554</td>
+        <td>92.14%</td>
+        <td>3.83 s</td>
+      </tr>
+      <tr>
+        <td>Qwen2.5-VL-7B zero-shot</td>
+        <td class="metric-bad">0.4639</td>
+        <td class="metric-bad">0.7755</td>
+        <td>97.50%</td>
+        <td>2.41 s</td>
+      </tr>
+      <tr>
+        <td>EasyOCR (Arabic, off-the-shelf)</td>
+        <td class="metric-bad">0.4764</td>
+        <td class="metric-bad">1.0582</td>
+        <td>N/A</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>TrOCR (microsoft/trocr-base-handwritten)</td>
+        <td colspan="4" style="color:var(--ink-mute);font-size:13px;font-style:italic">Discarded — English-only tokenizer incompatible with Arabic script</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Training curve chart -->
+  <div class="section-label" style="margin-top:3rem">training curve</div>
+  <div class="chart-wrap">
+    <div class="chart-title">// run-1 · Qwen2.5-VL-7B LoRA · loss per step</div>
+    <div class="chart-canvas-wrap">
+      <canvas id="lossChart" role="img" aria-label="Training loss curve showing rapid drop in first 100 steps then stabilization around 4.8">Training loss per step and eval loss per epoch for 3-epoch LoRA run.</canvas>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ══ NORMALIZATION ══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-label">normalization</div>
+  <h2>Raw vs normalized CER</h2>
+  <p class="section-sub">Five standard Arabic normalization steps (alef, taa marbuta, diacritics, kashida, punctuation) applied to both reference and hypothesis before scoring. The <span style="color:var(--salmon);font-weight:500">zero-shot model benefits most</span> — 21% of its apparent error was orthographic convention mismatch, not misreading.</p>
+
+  <div class="norm-bars" id="normBars">
+    <div class="norm-row">
+      <div class="norm-label">
+        Qwen + LoRA (checkpoint-1120)
+        <span>0.3283 → 0.3043 &nbsp;<span style="color:var(--salmon)">↓ 7.3%</span></span>
+      </div>
+      <div class="bar-track" style="position:relative;margin-right:70px">
+        <div class="bar-raw" style="width:65.66%"></div>
+        <div class="bar-norm" style="width:60.86%"></div>
+      </div>
+    </div>
+    <div class="norm-row">
+      <div class="norm-label">
+        Qwen zero-shot
+        <span>0.4442 → 0.3506 &nbsp;<span style="color:var(--salmon)">↓ 21.1%</span></span>
+      </div>
+      <div class="bar-track" style="position:relative;margin-right:70px">
+        <div class="bar-raw" style="width:88.84%"></div>
+        <div class="bar-norm" style="width:70.12%"></div>
+      </div>
+    </div>
+    <div class="norm-row">
+      <div class="norm-label">
+        EasyOCR (10 samples)
+        <span>0.4377 → 0.4007 &nbsp;<span style="color:var(--salmon)">↓ 8.5%</span></span>
+      </div>
+      <div class="bar-track" style="position:relative;margin-right:70px">
+        <div class="bar-raw" style="width:87.54%"></div>
+        <div class="bar-norm" style="width:80.14%"></div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--ink-mute)">Gray bar = raw CER · Teal bar = normalized CER · Max bar width = CER 0.50</p>
+</section>
+
+<!-- ══ NER ════════════════════════════════════════════════════════════════ -->
+<div style="background:var(--card)">
+<section class="section">
+  <div class="section-label">downstream NLP</div>
+  <h2>Named entity recognition</h2>
+  <p class="section-sub">CAMeL Tools NERecognizer (AraBERT) applied to 280 GPT reference transcriptions and 280 Qwen fine-tuned outputs. Entity-level F1: <span style="color:var(--salmon);font-weight:500">0.2545</span> — reflects exact-string matching across imperfect transcriptions, not NER quality.</p>
+
+  <div class="ner-grid">
+    <div class="ner-card">
+      <h3>GPT (reference) · 132 entities</h3>
+      <div class="ner-type-bar">
+        <div class="ner-row">
+          <span class="ner-type">LOC</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:100%"></div></div>
+          <span class="ner-count">56</span>
+        </div>
+        <div class="ner-row">
+          <span class="ner-type">PERS</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:69.6%"></div></div>
+          <span class="ner-count">39</span>
+        </div>
+        <div class="ner-row">
+          <span class="ner-type">MISC</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:50%"></div></div>
+          <span class="ner-count">28</span>
+        </div>
+        <div class="ner-row">
+          <span class="ner-type">ORG</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:16.1%"></div></div>
+          <span class="ner-count">9</span>
+        </div>
+      </div>
+    </div>
+    <div class="ner-card">
+      <h3>Qwen fine-tuned · 122 entities</h3>
+      <div class="ner-type-bar">
+        <div class="ner-row">
+          <span class="ner-type">LOC</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:100%"></div></div>
+          <span class="ner-count">55</span>
+        </div>
+        <div class="ner-row">
+          <span class="ner-type">PERS</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:56.4%"></div></div>
+          <span class="ner-count">31</span>
+        </div>
+        <div class="ner-row">
+          <span class="ner-type">MISC</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:43.6%"></div></div>
+          <span class="ner-count">24</span>
+        </div>
+        <div class="ner-row">
+          <span class="ner-type">ORG</span>
+          <div class="ner-bar-outer"><div class="ner-bar-inner" style="width:21.8%"></div></div>
+          <span class="ner-count">12</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ══ SAMPLE PREDICTIONS ════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-label">sample predictions</div>
+  <h2>What the model actually reads</h2>
+  <p class="section-sub">Selected from the 280-sample evaluation set. Three exact matches confirmed the model genuinely reads from the image; the worst cases reveal where it fails.</p>
+
+  <div class="samples">
+    <div class="sample-card good">
+      <div class="sample-meta">
+        <span class="sample-type">exact match</span>
+        <span class="sample-cer">CER 0.000</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">REF</span>
+        <span class="arabic">فقد بين الدستور اليمني، تساوي جميع أفراد الشعب اليمني بالحقوق</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">HYP</span>
+        <span class="arabic">فقد بين الدستور اليمني، تساوي جميع أفراد الشعب اليمني بالحقوق</span>
+      </div>
+    </div>
+    <div class="sample-card good">
+      <div class="sample-meta">
+        <span class="sample-type">near-perfect · comma difference</span>
+        <span class="sample-cer">CER 0.022</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">REF</span>
+        <span class="arabic">في مايو 2007 انطلقت من سلطة عمان وبعد ست ساعات</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">HYP</span>
+        <span class="arabic">في مايو 2007 انطلقت من سلطة عمان، وبعد ست ساعات</span>
+      </div>
+    </div>
+    <div class="sample-card bad">
+      <div class="sample-meta">
+        <span class="sample-type">worst · diacritization confusion</span>
+        <span class="sample-cer" style="color:var(--salmon)">CER 1.500</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">REF</span>
+        <span class="arabic">تأشيرة</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">HYP</span>
+        <span class="arabic">تُأَمِّنْهُ</span>
+      </div>
+      <p style="font-size:12px;color:var(--ink-mute);margin-top:8px">"visa" transcribed as a diacritized verb of a different root — hypothesis longer than reference, CER above 1.0</p>
+    </div>
+    <div class="sample-card bad">
+      <div class="sample-meta">
+        <span class="sample-type">worst · short reference</span>
+        <span class="sample-cer" style="color:var(--salmon)">CER 1.125</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">REF</span>
+        <span class="arabic">من يعترف</span>
+      </div>
+      <div class="sample-line">
+        <span class="sample-lbl">HYP</span>
+        <span class="arabic">من لكو لفته ،</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PERPLEXITY ════════════════════════════════════════════════════════ -->
+<div style="background:var(--card)">
+<section class="section">
+  <div class="section-label">perplexity</div>
+  <h2>Linguistic naturalness</h2>
+  <p class="section-sub">Bigram and trigram LMs trained on 200 GPT transcriptions, evaluated on 80 held-out samples. Ordering confirms fine-tuned outputs are linguistically closest to GPT reference — though absolute values are high due to the small LM training corpus (1,530-token vocabulary).</p>
+
+  <div style="background:var(--white);border-radius:12px;padding:1.5rem;border:1px solid var(--border)">
+    <div style="display:flex;gap:8px;margin-bottom:1rem;font-size:12px;color:var(--ink-mute);font-family:'DM Mono',monospace">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:var(--teal);display:inline-block"></span>bigram</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:var(--teal-lt);display:inline-block"></span>trigram</span>
+    </div>
+    <div class="perp-row">
+      <span class="perp-dot" style="background:var(--ink)"></span>
+      <span class="perp-model">GPT (reference)</span>
+      <span class="perp-val" style="color:var(--teal)">1504.61</span>
+      <span class="perp-val">1510.74</span>
+    </div>
+    <div class="perp-row">
+      <span class="perp-dot" style="background:var(--teal)"></span>
+      <span class="perp-model">Qwen + LoRA (checkpoint-1120)</span>
+      <span class="perp-val" style="color:var(--teal)">1509.26</span>
+      <span class="perp-val">1516.64</span>
+    </div>
+    <div class="perp-row">
+      <span class="perp-dot" style="background:var(--teal-lt)"></span>
+      <span class="perp-model">Qwen zero-shot</span>
+      <span class="perp-val">1513.17</span>
+      <span class="perp-val">1518.97</span>
+    </div>
+    <div class="perp-row" style="border:none">
+      <span class="perp-dot" style="background:var(--ink-mute)"></span>
+      <span class="perp-model">EasyOCR (10 samples)</span>
+      <span class="perp-val" style="color:var(--ink-mute)">1504.33</span>
+      <span class="perp-val" style="color:var(--ink-mute)">1512.72</span>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ══ CONFIG ════════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-label">configuration</div>
+  <h2>LoRA adapter + training setup</h2>
+
+  <div class="two-col">
+    <div>
+      <p style="font-size:13px;color:var(--ink-mute);font-family:'DM Mono',monospace;margin-bottom:0.75rem">// adapter</p>
+      <table class="config-table">
+        <tr><td>Base model</td><td>Qwen2.5-VL-7B-Instruct</td></tr>
+        <tr><td>Quantization</td><td>4-bit NF4, double quant, bf16</td></tr>
+        <tr><td>LoRA rank r</td><td>32</td></tr>
+        <tr><td>LoRA alpha α</td><td>64</td></tr>
+        <tr><td>LoRA dropout</td><td>0.05</td></tr>
+        <tr><td>Target modules</td><td>q, k, v, o, gate, up, down proj</td></tr>
+        <tr><td>Trainable params</td><td>95,178,752 (1.13%)</td></tr>
+      </table>
+    </div>
+    <div>
+      <p style="font-size:13px;color:var(--ink-mute);font-family:'DM Mono',monospace;margin-bottom:0.75rem">// training</p>
+      <table class="config-table">
+        <tr><td>Epochs</td><td>3 (1,680 steps)</td></tr>
+        <tr><td>Best checkpoint</td><td>checkpoint-1120 (epoch 2)</td></tr>
+        <tr><td>Learning rate</td><td>2e-5 · cosine · 10% warmup</td></tr>
+        <tr><td>Optimizer</td><td>AdamW fused</td></tr>
+        <tr><td>Max seq length</td><td>8,192 tokens</td></tr>
+        <tr><td>Effective batch</td><td>2 (batch=1, grad_accum=2)</td></tr>
+        <tr><td>Hardware</td><td>NVIDIA A100-SXM4-40GB · 90 min</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ REPO STRUCTURE ══════════════════════════════════════════════════ -->
+<div style="background:var(--ink)">
+<section class="section" style="padding-top:4rem;padding-bottom:4rem">
+  <div class="section-label" style="color:var(--teal-lt)">repository</div>
+  <h2 style="color:var(--bg)">Project structure</h2>
+  <p class="section-sub" style="color:rgba(226,215,218,0.6)">Eleven notebooks, one per stage. All result files committed. Adapter weights excluded (regenerate with NB_05).</p>
+
+  <div class="repo-tree">
+<span class="dir">NLP_Arabic_HTR_Project/</span>
+│
+├── <span class="dir">notebooks/</span>                        <span class="comment"># one notebook per stage</span>
+│   ├── <span class="nb">NB_01_setup.ipynb</span>               <span class="file">environment + Drive setup</span>
+│   ├── <span class="nb">NB_02_data_preprocessing.ipynb</span>  <span class="file">image validation + inspection</span>
+│   ├── <span class="nb">NB_03_data_collection.ipynb</span>     <span class="file">GPT teacher labeling (OpenAI API)</span>
+│   ├── <span class="nb">NB_04_data_transformation.ipynb</span> <span class="file">GPT → Qwen format · 80/20 split</span>
+│   ├── <span class="nb">NB_05_finetuning.ipynb</span>          <span class="comment"># A100 required · ~90 min</span>
+│   ├── <span class="nb">NB_06_evaluation.ipynb</span>          <span class="file">CER / WER / JSON rate · A100</span>
+│   ├── <span class="nb">NB_07_downstream_nlp.ipynb</span>      <span class="file">NER + POS · CAMeL Tools</span>
+│   ├── <span class="nb">NB_08_ocr_baseline.ipynb</span>        <span class="file">EasyOCR Arabic baseline</span>
+│   ├── <span class="nb">NB_09_zero-Shot_qwen_baseline.ipynb</span> <span class="comment"># A100 · primary baseline</span>
+│   ├── <span class="nb">NB_10_normalization.ipynb</span>       <span class="file">5-step Arabic normalization impact</span>
+│   └── <span class="nb">NB_11_perplexity.ipynb</span>          <span class="file">bigram / trigram LM perplexity</span>
+│
+├── <span class="dir">data/</span>
+│   ├── eval/eval.jsonl                 <span class="file">280 eval samples (images as base64)</span>
+│   └── train/train.jsonl              <span class="file">1,120 train samples</span>
+│
+├── <span class="dir">logs/</span>
+│   ├── run-1/
+│   │   ├── eval_results_checkpoint-1120.json  <span class="comment"># CER 0.3283 · primary results</span>
+│   │   ├── eval_results_zero_shot.json
+│   │   ├── training_log.json
+│   │   └── training_curve.png
+│   ├── stage6/  ner_results.json · pos_results.json
+│   ├── stage7/  easyocr_results.json
+│   ├── stage10/ normalization_results.json
+│   └── stage11/ perplexity_results.json
+│
+├── <span class="dir">camel_data/</span>                         <span class="file">CAMeL Tools NER + morphology models</span>
+│
+└── .gitignore                          <span class="comment"># models/ and large bins excluded</span>
+  </div>
+</section>
+</div>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════════════════ -->
+<footer>
+  <p>MAI 656 — Natural Language Processing · Canadian University Dubai · Spring 2026</p>
+  <p style="margin-top:0.5rem">
+    <a href="https://github.com/Farnaz4649/NLP_Arabic_HTR_Project" target="_blank">github.com/Farnaz4649/NLP_Arabic_HTR_Project</a>
+  </p>
+</footer>
+
+<!-- ══ CHART.JS ══════════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const trainSteps=[10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990,1000,1010,1020,1030,1040,1050,1060,1070,1080,1090,1100,1110,1120,1130,1140,1150,1160,1170,1180,1190,1200,1210,1220,1230,1240,1250,1260,1270,1280,1290,1300,1310,1320,1330,1340,1350,1360,1370,1380,1390,1400,1410,1420,1430,1440,1450,1460,1470,1480,1490,1500,1510,1520,1530,1540,1550,1560,1570,1580,1590,1600,1610,1620,1630,1640,1650,1660,1670,1680];
+const trainLoss=[13.6354,13.8345,13.2485,12.5397,11.6121,9.9832,8.194,6.8704,6.1147,5.5111,5.2823,5.0562,5.0065,5.0511,4.9259,4.9032,4.9819,4.942,4.9439,4.913,4.9689,5.0167,4.9516,4.864,4.9113,4.9194,4.9957,4.8968,4.861,5.0066,4.8977,4.9111,4.9752,4.9175,4.9681,4.9467,4.9752,4.9732,4.7771,4.8366,4.8575,4.8683,4.9102,4.8459,4.8371,4.8319,4.8967,4.9387,4.7521,4.8991,5.0464,4.9193,4.8698,4.8606,4.8417,4.9006,4.8956,4.8893,4.8197,4.9556,4.8541,4.8735,4.8109,4.966,4.8778,4.8213,4.9165,4.8327,4.8543,4.8334,4.944,4.8273,4.9573,4.7056,4.7319,4.8258,4.9126,4.9089,4.8619,4.8258,4.9273,4.9111,4.8412,4.7863,4.6882,4.7987,4.8464,4.8984,4.8789,4.9045,4.8519,4.9369,4.8392,4.8448,4.9166,4.8235,4.9537,4.8857,4.769,4.7939,4.8606,4.7825,4.8442,4.8386,4.7818,4.7419,4.8354,4.7964,4.9287,4.8471,4.9658,4.7854,4.8354,4.7921,4.8804,4.935,4.7598,4.7888,4.8105,4.8257,4.6863,4.8937,4.8293,4.8392,4.8198,4.7482,4.7966,4.7676,4.7526,4.818,4.7139,4.7788,4.7768,4.7911,4.7584,4.9701,4.8674,4.8565,4.7518,4.6925,4.8183,4.7366,4.8279,4.8304,4.8782,4.7519,4.8051,4.7849,4.8185,4.7429,4.6486,4.6583,4.8556,4.8057,4.8782,4.8342,4.8286,4.8993,4.8169,4.8023,4.7267,4.788,4.8332,4.9847,4.7529,4.7679,4.8768,4.7755];
+const evalSteps=[560,1120,1680];
+const evalLoss=[4.874,4.8603,4.8669];
+
+new Chart(document.getElementById('lossChart'),{
+  type:'line',
+  data:{
+    datasets:[
+      {
+        label:'Train loss (per step)',
+        data:trainSteps.map((s,i)=>({x:s,y:trainLoss[i]})),
+        borderColor:'#5c9eab',
+        backgroundColor:'transparent',
+        borderWidth:1.5,
+        pointRadius:0,
+        tension:0.3,
+      },
+      {
+        label:'Eval loss (per epoch)',
+        data:evalSteps.map((s,i)=>({x:s,y:evalLoss[i]})),
+        borderColor:'#e09079',
+        backgroundColor:'#e09079',
+        borderWidth:2,
+        pointRadius:6,
+        pointBackgroundColor:'#e09079',
+        tension:0,
+      }
+    ]
+  },
+  options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#22273e',
+        titleColor:'#9ad2d1',
+        bodyColor:'#e2d7da',
+        callbacks:{
+          label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(4)}`
+        }
+      },
+      annotation:{
+        annotations:{
+          bestLine:{
+            type:'line',
+            xMin:1120,xMax:1120,
+            borderColor:'#e09079',
+            borderWidth:1,
+            borderDash:[4,3],
+            label:{content:'checkpoint-1120',display:true,position:'start',color:'#e09079',font:{size:10,family:'DM Mono'}}
+          }
+        }
+      }
+    },
+    scales:{
+      x:{
+        type:'linear',
+        title:{display:true,text:'Step',color:'#7a819e',font:{size:11,family:'DM Mono'}},
+        ticks:{color:'#7a819e',font:{size:10}},
+        grid:{color:'rgba(34,39,62,0.06)'}
+      },
+      y:{
+        title:{display:true,text:'Cross-entropy loss',color:'#7a819e',font:{size:11,family:'DM Mono'}},
+        ticks:{color:'#7a819e',font:{size:10}},
+        grid:{color:'rgba(34,39,62,0.06)'},
+        min:4.5,
+        max:14.5
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
