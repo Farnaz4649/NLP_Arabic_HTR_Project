@@ -1,0 +1,20 @@
+# Model adapter weights
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Extracted PNG images (redundant — images already in eval.jsonl as base64)
+data/trocr_images/
+
+# camel_data model weights (large binary)
+camel_data/data/ner/arabert/pytorch_model.bin
+camel_data/data/morphology_db/calima-msa-r13/morphology.db
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.pyc

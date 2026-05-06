@@ -1,0 +1,5 @@
+{
+    "ner-arabert": "1.0.0",
+    "morphology-db-msa-r13": "0.4.0",
+    "disambig-mle-calima-msa-r13": "0.2.5"
+}

@@ -1,0 +1,130 @@
+{
+  "lm_config": {
+    "smoothing": "Laplace (add-1)",
+    "tokenization": "whitespace",
+    "train_size": 200,
+    "eval_size": 80,
+    "train_source": "GPT transcriptions (first 200 of eval.jsonl)"
+  },
+  "perplexity_table": {
+    "reference": {
+      "label": "GPT (reference)",
+      "n_valid": 79,
+      "bigram_mean": 1504.61,
+      "bigram_median": 1547.12,
+      "trigram_mean": 1510.74,
+      "trigram_median": 1543.29
+    },
+    "fine-tuned": {
+      "label": "Qwen2.5-VL-7B + LoRA (ckpt-1120)",
+      "n_valid": 79,
+      "bigram_mean": 1509.26,
+      "bigram_median": 1547.4,
+      "trigram_mean": 1516.64,
+      "trigram_median": 1543.29
+    },
+    "zero-shot": {
+      "label": "Qwen2.5-VL-7B zero-shot",
+      "n_valid": 79,
+      "bigram_mean": 1513.17,
+      "bigram_median": 1546.68,
+      "trigram_mean": 1518.97,
+      "trigram_median": 1543.29
+    },
+    "easyocr": {
+      "label": "EasyOCR (Arabic, 10 samples)",
+      "n_valid": 10,
+      "bigram_mean": 1504.33,
+      "bigram_median": 1543.4,
+      "trigram_mean": 1512.72,
+      "trigram_median": 1542.4
+    }
+  },
+  "cer_perplexity_correlation": {
+    "qwen_finetuned_bigram": {
+      "n_pairs": 79,
+      "pearson_r": -0.1944,
+      "spearman": -0.1077
+    },
+    "qwen_finetuned_trigram": {
+      "n_pairs": 78,
+      "pearson_r": -0.2689,
+      "spearman": -0.0726
+    },
+    "qwen_zeroshot_bigram": {
+      "n_pairs": 79,
+      "pearson_r": 0.186,
+      "spearman": 0.2014
+    },
+    "qwen_zeroshot_trigram": {
+      "n_pairs": 78,
+      "pearson_r": 0.0919,
+      "spearman": 0.1259
+    }
+  },
+  "top5_highest_perplexity_qwen": [
+    {
+      "perplexity": 1594.52,
+      "cer": 0.29411764705882354,
+      "reference": "التأثر في المجتمع",
+      "hypothesis": "الانتشار في المجتمع."
+    },
+    {
+      "perplexity": 1593.03,
+      "cer": 0.5,
+      "reference": "ان يقبسه",
+      "hypothesis": "الن يقصه."
+    },
+    {
+      "perplexity": 1577.04,
+      "cer": 0.26666666666666666,
+      "reference": "وعشره تحت الصفر",
+      "hypothesis": "وعشرية كت الصفر"
+    },
+    {
+      "perplexity": 1573.55,
+      "cer": 0.2,
+      "reference": "هاملك من الاحترام للمرأة.",
+      "hypothesis": "هما كلًا من الاحترام للمرأة."
+    },
+    {
+      "perplexity": 1568.13,
+      "cer": 0.09523809523809523,
+      "reference": "تاءً، وان باطن الأرض.",
+      "hypothesis": "تاماً، وان باطن الأرض."
+    }
+  ],
+  "top5_lowest_perplexity_qwen": [
+    {
+      "perplexity": 1247.43,
+      "cer": 0.9534883720930233,
+      "reference": "وقد زاد اتساعها المناطق الجنوبية الممتدة من",
+      "hypothesis": "وقد زارنا أنتا كما الناطقة الجوف ببيه الفرقة و للنقطة المنسوبة للمبدع من"
+    },
+    {
+      "perplexity": 1274.41,
+      "cer": 0.42592592592592593,
+      "reference": "في اصدار، الندوة، ضف عثر على أنس ناحيه - جلسله، أو ابن",
+      "hypothesis": "في أصدر المذورة كشفت على أننا ناحية جليلة، أو وانف"
+    },
+    {
+      "perplexity": 1336.57,
+      "cer": 0.2839506172839506,
+      "reference": "في هدوء مع جبهة العين اليوم قالت ابيدة لابنها، رقية معهد كونتوشيرس بجامعة القاهرة",
+      "hypothesis": "في حوار مع جملة الصيغة اليوم قالت السيدة ليناغيا، نبيه محمد كونفوشيوس بجامعة القاهرة"
+    },
+    {
+      "perplexity": 1350.0,
+      "cer": 0.47368421052631576,
+      "reference": "صباي ذلك موقع كنفسح ورفع فيه الهز او ثور العصامرة على مصر",
+      "hypothesis": "ما هي ذلك موقع عرضه ورقة القمر أو قوة الحفاظة على صدر"
+    },
+    {
+      "perplexity": 1370.05,
+      "cer": 0.18,
+      "reference": "من حافظة لمودة أنفي ياليمي، وهي تساوي عشرة دولارات",
+      "hypothesis": "من حافظة بعوهة أني يال يهي، وهي تساوي عشر دوالرات"
+    }
+  ],
+  "note": "N-gram LMs built with NLTK Laplace smoothing on 200 GPT transcriptions. Perplexity computed on held-out 80 samples. EasyOCR limited to 10 stored samples. Infinite-perplexity sentences (< n words) excluded from means."
+}
