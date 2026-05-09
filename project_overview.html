@@ -783,6 +783,52 @@ footer a{color:var(--teal-lt)}
 </section>
 </div>
 
+<!-- ══ POS TAGGING ══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-label">part-of-speech tagging</div>
+  <h2>Morphosyntactic profile</h2>
+  <p class="section-sub">CAMeL Tools MLEDisambiguator (CALIMA-MSA-r13) applied to 3,056 GPT tokens and 2,968 Qwen tokens. The near-identical distributions confirm that character-level transcription errors do not systematically shift the morphosyntactic character of the output — the model produces the correct syntactic scaffolding even when individual words differ.</p>
+
+  <div class="chart-wrap">
+    <div class="chart-title">// top POS tags · GPT reference vs Qwen fine-tuned · token counts</div>
+    <div style="display:flex;gap:16px;margin-bottom:1rem;font-size:12px;color:var(--ink-mute);font-family:'DM Mono',monospace">
+      <span style="display:flex;align-items:center;gap:4px">
+        <span style="width:10px;height:10px;border-radius:2px;background:#22273e;display:inline-block"></span>GPT (reference)
+      </span>
+      <span style="display:flex;align-items:center;gap:4px">
+        <span style="width:10px;height:10px;border-radius:2px;background:#5c9eab;display:inline-block"></span>Qwen fine-tuned
+      </span>
+    </div>
+    <div style="position:relative;height:220px">
+      <canvas id="posChart" role="img" aria-label="Horizontal bar chart comparing POS tag counts between GPT and Qwen across noun, noun_prop, verb, and prep categories">GPT: noun 1077, noun_prop 564, verb 399, prep 366. Qwen: noun 1005, noun_prop 525, verb 422, prep 348.</canvas>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:1rem">
+    <div style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:6px">total tokens</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--ink)">3,056</div>
+      <div style="font-size:12px;color:var(--ink-mute)">GPT · 280 transcriptions</div>
+    </div>
+    <div style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:6px">Qwen tokens</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--ink)">2,968</div>
+      <div style="font-size:12px;color:var(--ink-mute)">88 fewer · shorter outputs</div>
+    </div>
+    <div style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:6px">dominant tag</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--ink)">noun</div>
+      <div style="font-size:12px;color:var(--ink-mute)">35.2% GPT · 33.9% Qwen</div>
+    </div>
+    <div style="background:var(--white);border-radius:10px;padding:1rem;border:1px solid var(--border)">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:6px">positional accuracy</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--salmon)">20.18%</div>
+      <div style="font-size:12px;color:var(--ink-mute)">length mismatch artefact</div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:var(--ink-mute);margin-top:0.75rem">Positional accuracy (20.18%) reflects the 88-token length difference between sequences causing misalignment after the first divergence — not a measure of tagging quality. The distributional similarity across all major tags is the meaningful signal.</p>
+</section>
+  
 <!-- ══ SAMPLE PREDICTIONS ════════════════════════════════════════════════ -->
 <section class="section">
   <div class="section-label">sample predictions</div>
@@ -1051,6 +1097,52 @@ new Chart(document.getElementById('lossChart'),{
     }
   }
 });
+
+new Chart(document.getElementById('posChart'), {
+  type: 'bar',
+  data: {
+    labels: ['noun', 'noun_prop', 'verb', 'prep'],
+    datasets: [
+      {
+        label: 'GPT (reference)',
+        data: [1077, 564, 399, 366],
+        backgroundColor: '#22273e',
+        borderWidth: 0,
+      },
+      {
+        label: 'Qwen fine-tuned',
+        data: [1005, 525, 422, 348],
+        backgroundColor: '#5c9eab',
+        borderWidth: 0,
+      }
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#22273e',
+        titleColor: '#9ad2d1',
+        bodyColor: '#e2d7da',
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#7a819e', font: { size: 10 } },
+        grid: { color: 'rgba(34,39,62,0.06)' },
+        title: { display: true, text: 'token count', color: '#7a819e', font: { size: 11, family: 'DM Mono' } }
+      },
+      y: {
+        ticks: { color: '#22273e', font: { size: 13, family: 'DM Mono' } },
+        grid: { display: false }
+      }
+    }
+  }
+});
 </script>
+
 </body>
 </html>
